@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="sk" >
+<head>
+    <meta charset="UTF-8">
+    <title>E-Health - Pacienti</title>
+    <link rel="stylesheet" href="style.css">
+    <script>
+        let id = sessionStorage.getItem("id");
+        let token = sessionStorage.getItem("token");
+            if (id == null || token == null) {
+            sessionStorage.clear()
+            location.replace("login.html")
+        }
+        fetch("http://localhost:8080/zadanie-ehealth-api/asos/user/authentication/" + id + "/" + token, {method: "GET"})
+            .then(response => response.json())
+            .then(result => {
+                if (result["successfulAuthenticated"] === false) {
+                    sessionStorage.clear()
+                    location.replace("login.html")
+                }
+            });
+    </script>
+</head>
+<body>
+<div class="navbar">
+    <a href="medic.html">Pacienti</a>
+    <a href="medic_record.html">Záznamy</a>
+    <a href="medic_shared_files.html">Zdieľanie súborov</a>
+    <a id="logout" href="login.html">Odhlásiť</a>
+</div>
+<div id="section-form-wrap">
+    <h2>Pacienti</h2>
+    <div id="login-form">
+        <hr class="rounded">
+        <h4>Pridať pacienta</h4>
+        <select name="select" id="selectPatient" required></select>
+        <p>
+            <input type="submit" id="login" value="Pridať">
+        </p>
+        <hr class="rounded">
+        <h4>Zoznam pacientov</h4>
+        <div id="medic_list">
+        </div>
+    </div>
+</div>
+<script>
+    let logout = document.querySelector("#logout")
+    let medicList = document.querySelector("#medic_list")
+    let selectPatient = document.querySelector("#selectPatient");
+    let addPatient = document.querySelector("#login");
+
+    logout.addEventListener("click", () => {
+        if (id == null) {
+            sessionStorage.clear()
+            location.replace("login.html")
+        }
+        fetch("http://localhost:8080/zadanie-ehealth-api/asos/user/logut/" + id, {method: "GET"})
+        sessionStorage.clear()
+        location.replace("login.html")
+    });
+
+    fetch("http://localhost:8080/zadanie-ehealth-api/asos/patient/getPatientsByMedicId/" + id +"/" + token,  {method: "GET"})
+        .then(response => response.json())
+        .then(result => {
+            medicList.innerHTML = "";
+            result.forEach(item => {
+                let tmpH6Email = document.createElement("h6");
+                let tmpH6Name = document.createElement("h6");
+                let tmpH6Surname = document.createElement("h6");
+                let tmpHr = document.createElement("hr");
+                tmpHr.className = "rounded"
+                tmpH6Name.innerHTML = "Meno: " + item["patientName"];
+                tmpH6Surname.innerHTML = "Priezvisko: " + item["patientSurname"];
+                tmpH6Email.innerHTML = "Email: " + item["patientEmail"];
+                medicList.append(tmpH6Name);
+                medicList.append(tmpH6Surname);
+                medicList.append(tmpH6Email);
+                medicList.append(tmpHr);
+            })
+        });
+
+    fetch("http://localhost:8080/zadanie-ehealth-api/asos/user/getPatientsUser/" + id +"/" + token,  {method: "GET"})
+        .then(response => response.json())
+        .then(result => {
+            result.forEach(item => {
+                let tmpOption = document.createElement("option");
+                tmpOption.value = item["id"];
+                tmpOption.text = item["name"] + " " + item["surname"] + " (" + item["email"] + ")";
+                selectPatient.add(tmpOption);
+            })
+        });
+
+    addPatient.addEventListener("click", () => {
+        fetch("http://localhost:8080/zadanie-ehealth-api/asos/patient/postPatient/" + id +"/" + selectPatient.value + "/" + token,  {method: "POST"})
+            .then(() => {
+                location.reload()
+            })
+    })
+</script>
+</body>
+</html>

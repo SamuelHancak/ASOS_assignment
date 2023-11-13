@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="sk" >
+<head>
+    <meta charset="UTF-8">
+    <title>E-Health - Registrácia</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="registration-form-wrap">
+    <h2>Registrácia</h2>
+    <div  id="login-form">
+        <hr class="rounded">
+        <p><input type="text" id="email" name="email" placeholder="E-Mail" required></p>
+        <p><input type="text" id="name" name="name" placeholder="Meno" required></p>
+        <p><input type="text" id="surname" name="surname" placeholder="Priezvisko" required></p>
+        <p><input type="password" id="password" name="password" placeholder="Heslo" required></p>
+        <p><input type="submit" id="register_patient" value="Registrovať (pacient)"></p>
+        <p><input type="submit" id="register_doctor" value="Registrovať (doctor)"></p>
+        <p id="registration_message"></p>
+    </div>
+</div>
+<script>
+    let register_patient = document.querySelector("#register_patient")
+    let register_doctor = document.querySelector("#register_doctor")
+    let email = document.querySelector("#email");
+    let name = document.querySelector("#name");
+    let surname = document.querySelector("#surname");
+    let password = document.querySelector("#password");
+    let registrationMessage = document.querySelector("#registration_message");
+
+    register_patient.addEventListener("click", () => {
+        fetch("http://localhost:8080/zadanie-ehealth-api/asos/user/registration", {
+                method: "POST",
+                headers: {"Accept": "application/json", "Content-Type": "application/json"},
+                body: JSON.stringify({
+                    email: email.value,
+                    password: password.value,
+                    name: name.value,
+                    surname: surname.value,
+                    isMedic: false
+                })
+            })
+            .then(response => response.json())
+            .then(result => {
+                console.log(result)
+                if (result["result"] === true) {
+                    sessionStorage.clear()
+                    sessionStorage.setItem("id", result["userId"])
+                    sessionStorage.setItem("token", result["token"])
+                    sessionStorage.setItem("isMedic", result["isMedic"])
+                    location.replace("patient.html")
+                } else {
+                    registrationMessage.innerHTML = result["message"]
+                }
+            })
+    });
+
+    register_doctor.addEventListener("click", () => {
+        fetch("http://localhost:8080/zadanie-ehealth-api/asos/user/registration", {
+            method: "POST",
+            headers: {"Accept": "application/json", "Content-Type": "application/json"},
+            body: JSON.stringify({
+                email: email.value,
+                password: password.value,
+                name: name.value,
+                surname: surname.value,
+                isMedic: true
+            })
+        })
+            .then(response => response.json())
+            .then(result => {
+                console.log(result)
+                if (result["result"] === true) {
+                    sessionStorage.clear()
+                    sessionStorage.setItem("id", result["userId"])
+                    sessionStorage.setItem("token", result["token"])
+                    sessionStorage.setItem("isMedic", result["isMedic"])
+                    location.replace("medic.html")
+                } else {
+                    registrationMessage.innerHTML = result["message"]
+                }
+            })
+    });
+</script>
+</body>
+</html>

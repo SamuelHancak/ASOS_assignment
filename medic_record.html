@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="sk" >
+<head>
+    <meta charset="UTF-8">
+    <title>E-Health - Záznamy</title>
+    <link rel="stylesheet" href="style.css">
+    <script>
+        let id = sessionStorage.getItem("id");
+        let token = sessionStorage.getItem("token");
+
+        if (id == null || token == null) {
+            sessionStorage.clear()
+            location.replace("login.html")
+        }
+        fetch("http://localhost:8080/zadanie-ehealth-api/asos/user/authentication/" + id + "/" + token, {method: "GET"})
+            .then(response => response.json())
+            .then(result => {
+                if (result["successfulAuthenticated"] === false) {
+                    sessionStorage.clear()
+                    location.replace("login.html")
+                }
+            })
+    </script>
+</head>
+<body>
+<div class="navbar">
+    <a id="medics" href="medic.html">Pacienti</a>
+    <a href="medic_record.html">Záznamy</a>
+    <a href="medic_shared_files.html">Zdieľanie súborov</a>
+    <a id="logout" href="login.html">Odhlásiť</a>
+</div>
+<div id="section-form-wrap">
+    <h2>Záznamy</h2>
+    <div id="login-form">
+        <hr class="rounded">
+        <h4>Pridať záznam</h4>
+        <p>
+            <select name="select" id="selectPatient" required></select>
+        </p>
+        <p>
+            <input type="text" id="title" name="title" placeholder="Predmet" required>
+        </p>
+        <p>
+            <textarea id="content"></textarea>
+        </p>
+        <p>
+            <input type="submit" id="login" value="Pridať">
+        </p>
+        <hr class="rounded">
+        <h4>Zoznam záznamov</h4>
+        <p>
+            <input type="text" id="searchTitleInput" name="searchTitleInput" placeholder="Hľadaj v Predmete..." required>
+        </p>
+        <p>
+            <input type="submit" id="searchTitle" value="Hľadať">
+        </p>
+        <div id="medic_list">
+        </div>
+    </div>
+</div>
+<script>
+    let logout = document.querySelector("#logout")
+    let medicList = document.querySelector("#medic_list")
+    let selectPatient = document.querySelector("#selectPatient");
+    let title = document.querySelector("#title");
+    let content = document.querySelector("#content");
+    let addPatient = document.querySelector("#login");
+    let searchTitleInput = document.querySelector("#searchTitleInput");
+    let searchTitle = document.querySelector("#searchTitle");
+
+    logout.addEventListener("click", () => {
+        if (id == null) {
+            sessionStorage.clear()
+            location.replace("login.html")
+        }
+        fetch("http://localhost:8080/zadanie-ehealth-api/asos/user/logut/" + id, {method: "GET"})
+        sessionStorage.clear()
+        location.replace("login.html")
+    });
+
+    fetch("http://localhost:8080/zadanie-ehealth-api/asos/patientRecord/getPatientRecordsByMedicId/" + id +"/" + token,  {method: "GET"})
+        .then(response => response.json())
+        .then(result => {
+            medicList.innerHTML = "";
+            result.forEach(item => {
+                let tmpH6Email = document.createElement("h6");
+                let tmpH6Name = document.createElement("h6");
+                let tmpH6Surname = document.createElement("h6");
+                let tmpH6Title = document.createElement("h6");
+                let tmpH6Content = document.createElement("h6");
+                let tmpHr = document.createElement("hr");
+                tmpHr.className = "rounded"
+                tmpH6Name.innerHTML = "Meno: " + item["patientName"];
+                tmpH6Surname.innerHTML = "Priezvisko: " + item["patientSurname"];
+                tmpH6Email.innerHTML = "Email: " + item["patientEmail"];
+                tmpH6Title.innerHTML = "Predmet: " + item["title"];
+                tmpH6Content.innerHTML = "Obsah: " + item["content"];
+                medicList.append(tmpH6Name);
+                medicList.append(tmpH6Surname);
+                medicList.append(tmpH6Email);
+                medicList.append(tmpH6Title);
+                medicList.append(tmpH6Content);
+
+                medicList.append(tmpHr);
+            })
+
+        });
+
+    fetch("http://localhost:8080/zadanie-ehealth-api/asos/patient/getPatientsByMedicId/" + id +"/" + token,  {method: "GET"})
+        .then(response => response.json())
+        .then(result => {
+            result.forEach(item => {
+                let tmpOption = document.createElement("option");
+                tmpOption.value = item["patientId"];
+                tmpOption.text = item["patientName"] + " " + item["patientSurname"] + " (" + item["patientEmail"] + ")";
+                selectPatient.add(tmpOption);
+            })
+        });
+
+    addPatient.addEventListener("click", () => {
+        fetch("http://localhost:8080/zadanie-ehealth-api/asos/patientRecord/postPatientRecord/" + id +"/" + selectPatient.value + "/" + token,  {
+            method: "POST",
+            headers: {'Accept': 'application/json', 'Content-Type': 'application/json'},
+            body: JSON.stringify({title: title.value, content: content.value})
+        })
+            .then(() => {
+                location.reload()
+            })
+    })
+
+    searchTitle.addEventListener("click", () => {
+        if (searchTitleInput.value)
+            fetch("http://localhost:8080/zadanie-ehealth-api/asos/patientRecord/getPatientRecordsByMedicIdAndByTitleContains/" + id +"/" + searchTitleInput.value +"/" + token,  {method: "GET"})
+                .then(response => response.json())
+                .then(result => {
+                    medicList.innerHTML = "";
+                    result.forEach(item => {
+                        let tmpH6Email = document.createElement("h6");
+                        let tmpH6Name = document.createElement("h6");
+                        let tmpH6Surname = document.createElement("h6");
+                        let tmpH6Title = document.createElement("h6");
+                        let tmpH6Content = document.createElement("h6");
+                        let tmpHr = document.createElement("hr");
+                        tmpHr.className = "rounded"
+                        tmpH6Name.innerHTML = "Meno: " + item["patientName"];
+                        tmpH6Surname.innerHTML = "Priezvisko: " + item["patientSurname"];
+                        tmpH6Email.innerHTML = "Email: " + item["patientEmail"];
+                        tmpH6Title.innerHTML = "Predmet: " + item["title"];
+                        tmpH6Content.innerHTML = "Obsah: " + item["content"];
+                        medicList.append(tmpH6Name);
+                        medicList.append(tmpH6Surname);
+                        medicList.append(tmpH6Email);
+                        medicList.append(tmpH6Title);
+                        medicList.append(tmpH6Content);
+
+                        medicList.append(tmpHr);
+                    })
+
+                });
+        else
+            fetch("http://localhost:8080/zadanie-ehealth-api/asos/patientRecord/getPatientRecordsByMedicId/" + id +"/" + token,  {method: "GET"})
+                .then(response => response.json())
+                .then(result => {
+                    medicList.innerHTML = "";
+                    result.forEach(item => {
+                        let tmpH6Email = document.createElement("h6");
+                        let tmpH6Name = document.createElement("h6");
+                        let tmpH6Surname = document.createElement("h6");
+                        let tmpH6Title = document.createElement("h6");
+                        let tmpH6Content = document.createElement("h6");
+                        let tmpHr = document.createElement("hr");
+                        tmpHr.className = "rounded"
+                        tmpH6Name.innerHTML = "Meno: " + item["patientName"];
+                        tmpH6Surname.innerHTML = "Priezvisko: " + item["patientSurname"];
+                        tmpH6Email.innerHTML = "Email: " + item["patientEmail"];
+                        tmpH6Title.innerHTML = "Predmet: " + item["title"];
+                        tmpH6Content.innerHTML = "Obsah: " + item["content"];
+                        medicList.append(tmpH6Name);
+                        medicList.append(tmpH6Surname);
+                        medicList.append(tmpH6Email);
+                        medicList.append(tmpH6Title);
+                        medicList.append(tmpH6Content);
+
+                        medicList.append(tmpHr);
+                    })
+
+                });
+    });
+</script>
+</body>
+</html>

@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="sk" >
+<head>
+    <meta charset="UTF-8">
+    <title>E-Health - Zdieľanie súborov</title>
+    <link rel="stylesheet" href="style.css">
+    <script>
+        let id = sessionStorage.getItem("id");
+        let token = sessionStorage.getItem("token");
+
+        if (id == null || token == null) {
+            sessionStorage.clear()
+            location.replace("login.html")
+        }
+        fetch("http://localhost:8080/zadanie-ehealth-api/asos/user/authentication/" + id + "/" + token, {method: "GET"})
+            .then(response => response.json())
+            .then(result => {
+                if (result["successfulAuthenticated"] === false) {
+                    sessionStorage.clear()
+                    location.replace("login.html")
+                }
+            })
+    </script>
+</head>
+<body>
+<div class="navbar">
+    <a id="medics" href="medic.html">Pacienti</a>
+    <a href="medic_record.html">Záznamy</a>
+    <a href="medic_shared_files.html">Zdieľanie súborov</a>
+    <a id="logout" href="login.html">Odhlásiť</a>
+</div>
+<div id="section-form-wrap">
+    <h2>Zdieľanie súborov</h2>
+    <div id="login-form">
+        <hr class="rounded">
+        <h4>Odosielanie súborov</h4>
+        <p>
+            <select name="select" id="selectReceiver" required></select>
+        </p>
+        <p>
+            <input type="file" id="inputFile" accept="text/plain" placeholder="Vlož súbor (.txt)"/>
+        </p>
+        <p>
+            <input type="submit" id="login" value="Zdielať">
+        </p>
+        <hr class="rounded">
+        <h4>Zdieľané súbory</h4>
+        <div id="medic_list">
+        </div>
+    </div>
+</div>
+<script>
+    let logout = document.querySelector("#logout")
+    let email = document.querySelector("#email");
+    let selectReceiver = document.querySelector("#selectReceiver");
+    let inputFile = document.querySelector("#inputFile");
+    let shareFile = document.querySelector("#login");
+    let medicList = document.querySelector("#medic_list")
+
+    logout.addEventListener("click", () => {
+        if (id == null) {
+            sessionStorage.clear()
+            location.replace("login.html")
+        }
+        fetch("http://localhost:8080/zadanie-ehealth-api/asos/user/logut/" + id, {method: "GET"})
+        sessionStorage.clear()
+        location.replace("login.html")
+    });
+
+    fetch("http://localhost:8080/zadanie-ehealth-api/asos/user/getUsers/" + id +"/" + token,  {method: "GET"})
+        .then(response => response.json())
+        .then(result => {
+            result.forEach(item => {
+                let tmpOption = document.createElement("option");
+                tmpOption.value = item["id"];
+                if(item["isMedic"] === true)
+                    tmpOption.text = item["name"] + " " + item["surname"] + " (" + item["email"] + ") - lekár";
+                else
+                    tmpOption.text = item["name"] + " " + item["surname"] + " (" + item["email"] + ") - pacient";
+                selectReceiver.add(tmpOption);
+            })
+        });
+
+    shareFile.addEventListener("click", () => {
+        let fileReader = new FileReader();
+        fileReader.readAsText(inputFile.files[0]);
+        fileReader.onload = function(e) {
+            fetch("http://localhost:8080/zadanie-ehealth-api/asos/sharedFile/postFile/" + id +"/" + token,  {
+                method: "POST",
+                headers: {'Accept': 'application/json', 'Content-Type': 'application/json'},
+                body: JSON.stringify({toUserId: selectReceiver.value, fileContent: e.target.result})
+            })
+        }
+    });
+
+    fetch("http://localhost:8080/zadanie-ehealth-api/asos/sharedFile/getFiles/" + id +"/" + token,  {method: "GET"})
+        .then(response => response.json())
+        .then(result => {
+            medicList.innerHTML = "";
+            for (let i = 0; i < result["filesFrom"].length; i++) {
+                let blob = new Blob([result["filesContents"][i]], { type: "text/plain" });
+                let blobUrl = URL.createObjectURL(blob);
+                let link = document.createElement("a");
+                link.href = blobUrl;
+                link.download = "sharedFile.txt";
+                link.innerHTML = result["filesFrom"][i]
+
+                medicList.append(link)
+                medicList.append(document.createElement("br"))
+            }
+        });
+</script>
+</body>
+</html>

@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="sk" >
+<head>
+    <meta charset="UTF-8">
+    <title>E-Health - Lekári</title>
+    <link rel="stylesheet" href="style.css">
+    <script>
+        let id = sessionStorage.getItem("id");
+        let token = sessionStorage.getItem("token");
+
+        if (id == null || token == null) {
+            sessionStorage.clear()
+            location.replace("login.html")
+        }
+        fetch("http://localhost:8080/zadanie-ehealth-api/asos/user/authentication/" + id + "/" + token, {method: "GET"})
+            .then(response => response.json())
+            .then(result => {
+                if (result["successfulAuthenticated"] === false) {
+                    sessionStorage.clear()
+                    location.replace("login.html")
+                }
+            });
+    </script>
+</head>
+<body>
+<div class="navbar">
+    <a href="patient.html">Lekári</a>
+    <a href="patient_record.html">Záznamy</a>
+    <a href="patient_shared_files.html">Zdieľanie súborov</a>
+    <a id="logout" href="login.html">Odhlásiť</a>
+</div>
+<div id="section-form-wrap">
+    <h2>Lekári</h2>
+    <div id="login-form">
+        <hr class="rounded">
+        <h4>Zoznam lekárov</h4>
+        <div id="medic_list">
+
+        </div>
+    </div>
+</div>
+<script>
+    let logout = document.querySelector("#logout")
+    let medicList = document.querySelector("#medic_list")
+
+    logout.addEventListener("click", () => {
+        if (id == null) {
+            sessionStorage.clear()
+            location.replace("login.html")
+        }
+        fetch("http://localhost:8080/zadanie-ehealth-api/asos/user/logut/" + id, {method: "GET"})
+        sessionStorage.clear()
+        location.replace("login.html")
+    });
+
+    fetch("http://localhost:8080/zadanie-ehealth-api/asos/patient/getPatientsByPatientId/" + id +"/" + token,  {method: "GET"})
+        .then(response => response.json())
+        .then(result => {
+            medicList.innerHTML = "";
+            result.forEach(item => {
+                let tmpH6Email = document.createElement("h6");
+                let tmpH6Name = document.createElement("h6");
+                let tmpH6Surname = document.createElement("h6");
+                let tmpHr = document.createElement("hr");
+                tmpHr.className = "rounded"
+                tmpH6Name.innerHTML = "Meno: " + item["medicName"];
+                tmpH6Surname.innerHTML = "Priezvisko: " + item["medicSurname"];
+                tmpH6Email.innerHTML = "Email: " + item["medicEmail"];
+                medicList.append(tmpH6Name);
+                medicList.append(tmpH6Surname);
+                medicList.append(tmpH6Email);
+                medicList.append(tmpHr);
+            })
+        });
+</script>
+</body>
+</html>
