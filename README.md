@@ -109,6 +109,8 @@ altering their structure. For instance, adding new types of user permissions or 
 more easily.
 
 <hr/>
+
+## Team members and responsibilities
 <div align="center">
  
 | Team Member                                                                    | Responsibilities                                                                                                                         |
